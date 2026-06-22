@@ -364,9 +364,16 @@ class LibriSpeechAsrDataModule:
                 cut_transforms=transforms,
                 return_cuts=self.args.return_cuts,
             )
+        # DynamicBucketingSampler requires num_buckets <= number of cuts. Dev
+        # sets are often tiny when fine-tuning on custom data, so materialize
+        # the (small) valid set and cap the bucket count to its size instead of
+        # relying on the lhotse default, which would assert on small sets.
+        cuts_valid = cuts_valid.to_eager()
+        num_buckets = max(1, min(self.args.num_buckets, len(cuts_valid)))
         valid_sampler = DynamicBucketingSampler(
             cuts_valid,
             max_duration=self.args.max_duration,
+            num_buckets=num_buckets,
             shuffle=False,
         )
         logging.info("About to create dev dataloader")

@@ -261,6 +261,14 @@ def main() -> None:
     args = get_args()
     logging.info(vars(args))
 
+    # Feature extraction runs across a ProcessPoolExecutor and ships torch
+    # tensors back to the parent. torch's default "file_descriptor" sharing
+    # strategy relies on a per-process resource_sharer daemon socket, which is
+    # unreachable across processes in containerized runtimes like Google Colab
+    # (the receiver hits ConnectionRefusedError [Errno 111] in rebuild_storage_fd).
+    # "file_system" backs shared tensors with /dev/shm files instead - no socket.
+    torch.multiprocessing.set_sharing_strategy("file_system")
+
     # Imported here (not at module top) so the script can be inspected without
     # the heavy training-env dependencies installed.
     from datasets import Audio, DatasetDict, load_dataset, load_from_disk
@@ -406,6 +414,20 @@ def main() -> None:
     # Drop the in-memory HuggingFace audio so the saved cuts stay small and
     # load via the precomputed-features path used by finetune.py.
     cut_set = cut_set.drop_recordings()
+
+    # Dropping the recording makes each cut's recording_id resolve from its
+    # stored features (or None), but the supervisions still carry the original
+    # recording id from the HuggingFace bridge. Lhotse asserts that every
+    # supervision's recording_id matches the cut's, so reconcile them here;
+    # otherwise the trainer aborts with a "mismatched recording_id" assertion
+    # the first time it loads a batch.
+    def _reconcile_recording_id(cut):
+        cut.supervisions = [
+            fastcopy(s, recording_id=cut.recording_id) for s in cut.supervisions
+        ]
+        return cut
+
+    cut_set = cut_set.map(_reconcile_recording_id)
 
     cut_set.to_file(cuts_path)
     logging.info(f"Saved {cuts_path}")
