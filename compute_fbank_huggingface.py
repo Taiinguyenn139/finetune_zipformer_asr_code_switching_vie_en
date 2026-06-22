@@ -411,23 +411,23 @@ def main() -> None:
             storage_type=LilcomChunkyWriter,
         )
 
+    # Once the recording is dropped, lhotse derives a cut's recording_id from
+    # its stored features (cut/data.py: recording.id if has_recording else
+    # features.recording_id). For these HuggingFace cuts features.recording_id
+    # is None, so the recording-less cut would report recording_id=None and
+    # clash with the supervisions' (required, non-None) recording_id, aborting
+    # the trainer in qa.validate. Stamp the features with the recording id while
+    # the recording is still attached, so the value survives drop_recordings().
+    def _stamp_feature_recording_id(cut):
+        if cut.has_features:
+            cut.features = fastcopy(cut.features, recording_id=cut.recording_id)
+        return cut
+
+    cut_set = cut_set.map(_stamp_feature_recording_id)
+
     # Drop the in-memory HuggingFace audio so the saved cuts stay small and
     # load via the precomputed-features path used by finetune.py.
     cut_set = cut_set.drop_recordings()
-
-    # Dropping the recording makes each cut's recording_id resolve from its
-    # stored features (or None), but the supervisions still carry the original
-    # recording id from the HuggingFace bridge. Lhotse asserts that every
-    # supervision's recording_id matches the cut's, so reconcile them here;
-    # otherwise the trainer aborts with a "mismatched recording_id" assertion
-    # the first time it loads a batch.
-    def _reconcile_recording_id(cut):
-        cut.supervisions = [
-            fastcopy(s, recording_id=cut.recording_id) for s in cut.supervisions
-        ]
-        return cut
-
-    cut_set = cut_set.map(_reconcile_recording_id)
 
     cut_set.to_file(cuts_path)
     logging.info(f"Saved {cuts_path}")
