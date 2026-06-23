@@ -209,6 +209,29 @@ class LibriSpeechAsrDataModule:
         )
 
         group.add_argument(
+            "--musan-cuts",
+            type=str,
+            default="musan_cuts.jsonl.gz",
+            help="Filename (under --manifest-dir) of the MUSAN cuts to mix in "
+            "when --enable-musan is set. Point at a filtered manifest "
+            "(e.g. musan_speech_cuts.jsonl.gz) to bias toward a noise subset.",
+        )
+
+        group.add_argument(
+            "--musan-snr-low",
+            type=float,
+            default=10.0,
+            help="Lower bound (dB) of the random SNR used when mixing MUSAN.",
+        )
+
+        group.add_argument(
+            "--musan-snr-high",
+            type=float,
+            default=20.0,
+            help="Upper bound (dB) of the random SNR used when mixing MUSAN.",
+        )
+
+        group.add_argument(
             "--input-strategy",
             type=str,
             default="PrecomputedFeatures",
@@ -231,9 +254,14 @@ class LibriSpeechAsrDataModule:
         if self.args.enable_musan:
             logging.info("Enable MUSAN")
             logging.info("About to get Musan cuts")
-            cuts_musan = load_manifest(self.args.manifest_dir / "musan_cuts.jsonl.gz")
+            cuts_musan = load_manifest(self.args.manifest_dir / self.args.musan_cuts)
             transforms.append(
-                CutMix(cuts=cuts_musan, p=0.5, snr=(10, 20), preserve_id=True)
+                CutMix(
+                    cuts=cuts_musan,
+                    p=0.5,
+                    snr=(self.args.musan_snr_low, self.args.musan_snr_high),
+                    preserve_id=True,
+                )
             )
         else:
             logging.info("Disable MUSAN")
