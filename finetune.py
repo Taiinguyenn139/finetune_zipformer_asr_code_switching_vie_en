@@ -127,6 +127,22 @@ def maybe_log_mlflow_metrics(metrics: Dict[str, float], step: int) -> None:
         logging.warning(f"MLflow metric logging failed: {e}")
 
 
+def maybe_log_mlflow_artifact(path, artifact_path: Optional[str] = None) -> None:
+    """Upload a file to the active MLflow run if enabled.
+
+    No-op when MLflow is disabled and never raises, so an upload failure (e.g. an
+    unreachable Databricks workspace) cannot kill a long training run.
+    """
+    if not _USE_MLFLOW:
+        return
+    try:
+        import mlflow
+
+        mlflow.log_artifact(str(path), artifact_path=artifact_path)
+    except Exception as e:  # noqa
+        logging.warning(f"MLflow artifact logging failed: {e}")
+
+
 def setup_mlflow(params: AttributeDict) -> None:
     """Initialise an MLflow run on rank 0 (e.g. a Databricks workspace).
 
@@ -976,6 +992,8 @@ def save_checkpoint(
     if params.best_valid_epoch == params.cur_epoch:
         best_valid_filename = params.exp_dir / "best-valid-loss.pt"
         copyfile(src=filename, dst=best_valid_filename)
+        # Push the new best weight to MLflow so it survives a Colab timeout.
+        maybe_log_mlflow_artifact(best_valid_filename, artifact_path="best")
 
 
 def compute_loss(

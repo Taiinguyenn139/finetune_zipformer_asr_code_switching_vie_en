@@ -49,7 +49,14 @@ def get_args() -> argparse.Namespace:
         "--dev-frac",
         type=float,
         default=0.02,
-        help="Fraction held out as the dev split.",
+        help="Fraction of the original set held out as the dev split.",
+    )
+    p.add_argument(
+        "--test-frac",
+        type=float,
+        default=0.0,
+        help="Fraction of the original set held out as a test split that "
+        "neither training nor validation touches. 0 disables the test split.",
     )
     p.add_argument("--seed", type=int, default=42)
     p.add_argument(
@@ -175,19 +182,30 @@ def main() -> None:
     )
     combined = combined.shuffle(seed=args.seed)
 
-    if args.dev_frac > 0 and len(combined) > 1:
-        split = combined.train_test_split(test_size=args.dev_frac, seed=args.seed)
-        out = DatasetDict({"train": split["train"], "dev": split["test"]})
-    else:
-        out = DatasetDict({"train": combined})
+    # Carve test first (held out from both train and dev), then dev from the
+    # remainder. dev_frac/test_frac are fractions of the original set, so dev is
+    # rescaled against the post-test remainder to keep its absolute size.
+    splits: Dict[str, "Dataset"] = {}
+    rest = combined
+    if args.test_frac > 0 and len(rest) > 1:
+        s = rest.train_test_split(test_size=args.test_frac, seed=args.seed)
+        rest, splits["test"] = s["train"], s["test"]
+    if args.dev_frac > 0 and len(rest) > 1:
+        dev_size = min(args.dev_frac / max(1.0 - args.test_frac, 1e-9), 0.99)
+        s = rest.train_test_split(test_size=dev_size, seed=args.seed)
+        rest, splits["dev"] = s["train"], s["test"]
+    splits["train"] = rest
+    out = DatasetDict(splits)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     out.save_to_disk(str(args.output_dir))
     sizes = {k: len(v) for k, v in out.items()}
     logging.info(f"Saved combined dataset -> {args.output_dir}  splits={sizes}")
+    other = " and ".join(f"--split {k}" for k in out if k != "train")
     logging.info(
         "Next: compute_fbank_huggingface.py --load-from-disk "
-        f"--dataset {args.output_dir} --split train (and --split dev)."
+        f"--dataset {args.output_dir} --split train"
+        + (f" (and {other})." if other else ".")
     )
 
 
