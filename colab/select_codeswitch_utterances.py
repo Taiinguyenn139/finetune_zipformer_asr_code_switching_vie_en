@@ -159,11 +159,9 @@ def build_filter(args: argparse.Namespace):
     #     min_len=args.min_len,
     #     max_en_ratio=args.max_en_ratio,
     # )
-    return CodeSwitchFilterV2(
-            min_en_tokens=args.min_en_tokens,
-            min_len=args.min_len,
-            max_en_ratio=args.max_en_ratio,
-        )
+    # v2 is the statistical (fast-langdetect) filter; it thresholds on language
+    # probabilities, not token counts/ratios, so the v1 token knobs don't apply.
+    return CodeSwitchFilterV2()
 
 
 def stream_text_only(source: Dict, trust_remote_code: bool):

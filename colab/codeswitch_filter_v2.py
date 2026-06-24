@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 from typing import Optional, Dict
-from fast_langdetect import detect_multilingual
+from fast_langdetect import detect
 
 # Still useful for calculating total token counts for ratio checks
 _LETTER_RUN_RE = re.compile(r"[^\W\d_]+", re.UNICODE)
@@ -40,8 +40,10 @@ class CodeSwitchFilterV2:
         if not text or not text.strip():
             return False
 
-        # fast-langdetect returns: [{'lang': 'vi', 'score': 0.78}, {'lang': 'en', 'score': 0.21}]
-        predictions = detect_multilingual(text)
+        # fast-langdetect's detect(k=N) returns the top-N candidates ordered by
+        # score: [{'lang': 'vi', 'score': 0.78}, {'lang': 'en', 'score': 0.21}, ...].
+        # k=5 captures both the VI backbone and the EN code-switch among top langs.
+        predictions = detect(text, k=5)
         
         # Parse into a flat dictionary mapping lang -> score
         scores: Dict[str, float] = {p['lang']: p['score'] for p in predictions}

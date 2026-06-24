@@ -4,7 +4,7 @@
 #   - train_zipformer_colab.ipynb (GPU: restore -> fine-tune -> before/after WER)
 # Edit here once; both notebooks pick the change up via their "load config" cell.
 
-repo: "."                              # where THIS repo lives (clone or upload)
+repo: "finetune_zipformer_asr_code_switching_vie_en"                              # where THIS repo lives (clone or upload)
 drive: "vibank_cs/"                    # persistent workspace dir (created if absent)
 prefix: "vibank_cs"                    # manifest/cuts filename prefix
 
