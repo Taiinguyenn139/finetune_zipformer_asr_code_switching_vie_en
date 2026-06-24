@@ -61,6 +61,24 @@ class CodeSwitchFilterV2:
 
         return False
 
+    def english_tokens(self, text: str):
+        """Compatibility helper for manifest/reporting code.
+
+        V2 is sentence-level and does not natively attribute English tokens.
+        For downstream scripts that still expect a token list, fall back to the
+        rule-based extractor when it is available. If the optional wordlist
+        dependency is missing, return an empty list instead of failing.
+        """
+        try:
+            from codeswitch_filter import english_tokens as _english_tokens
+        except ImportError:
+            return []
+
+        try:
+            return _english_tokens(text)
+        except ImportError:
+            return []
+
 
 # --- Global Singleton instance for functional/convenience wrappers ---
 _DEFAULT_FILTER: Optional[CodeSwitchFilterV2] = None

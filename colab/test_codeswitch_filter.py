@@ -10,6 +10,11 @@ network access.
 
 from codeswitch_filter import CodeSwitchFilter
 
+try:
+    from codeswitch_filter_v2 import CodeSwitchFilterV2
+except ModuleNotFoundError:
+    CodeSwitchFilterV2 = None
+
 # Minimal English wordlist sufficient for these cases. The detector also folds
 # in its built-in domain allowlist (logistic, app, ...).
 _EN = {"hot", "online", "meeting", "deadline", "card", "good", "morning"}
@@ -64,6 +69,14 @@ def test_digits_and_punctuation_ignored():
     f = make_filter()
     toks = f.english_tokens("Số 123, thẻ card-2024!")
     assert toks == ["card"]
+
+
+def test_v2_exposes_compatibility_english_tokens():
+    if CodeSwitchFilterV2 is None:
+        return
+    f = CodeSwitchFilterV2()
+    toks = f.english_tokens("Ngành Logistic đang rất hot tại Việt Nam.")
+    assert isinstance(toks, list)
 
 
 if __name__ == "__main__":
