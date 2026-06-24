@@ -140,6 +140,7 @@ def load_sources(args: argparse.Namespace) -> List[Dict]:
 
 def build_filter(args: argparse.Namespace):
     from codeswitch_filter import CodeSwitchFilter
+    from codeswitch_filter_v2 import CodeSwitchFilterV2
 
     def _read(path: Optional[Path]) -> Optional[List[str]]:
         if path is None:
@@ -150,14 +151,19 @@ def build_filter(args: argparse.Namespace):
             if ln.strip() and not ln.startswith("#")
         ]
 
-    return CodeSwitchFilter(
-        english_words=_read(args.english_words_file),
-        vi_syllables=_read(args.vi_syllables_file),
-        domain_allowlist=_read(args.domain_allowlist_file),
-        min_en_tokens=args.min_en_tokens,
-        min_len=args.min_len,
-        max_en_ratio=args.max_en_ratio,
-    )
+    # return CodeSwitchFilter(
+    #     english_words=_read(args.english_words_file),
+    #     vi_syllables=_read(args.vi_syllables_file),
+    #     domain_allowlist=_read(args.domain_allowlist_file),
+    #     min_en_tokens=args.min_en_tokens,
+    #     min_len=args.min_len,
+    #     max_en_ratio=args.max_en_ratio,
+    # )
+    return CodeSwitchFilterV2(
+            min_en_tokens=args.min_en_tokens,
+            min_len=args.min_len,
+            max_en_ratio=args.max_en_ratio,
+        )
 
 
 def stream_text_only(source: Dict, trust_remote_code: bool):

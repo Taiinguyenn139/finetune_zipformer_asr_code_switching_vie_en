@@ -937,8 +937,27 @@ def main():
     logging.info(f"Device: {device}")
     logging.info(params)
 
-    lexicon = Lexicon(params.lang_dir)
-    max_token_id = max(lexicon.tokens)
+    # Token-based CTC methods need only the BPE model (vocab + ctc_topo), not a
+    # prepared lang dir with tokens.txt/words.txt. Mirror decode.py, which builds
+    # its vocab straight from the BPE model. The HLG/word-level rescoring methods
+    # still require a real lang dir, so only load the Lexicon for those.
+    token_based_methods = (
+        "ctc-greedy-search",
+        "ctc-decoding",
+        "ctc-prefix-beam-search",
+        "ctc-prefix-beam-search-attention-decoder-rescoring",
+        "ctc-prefix-beam-search-shallow-fussion",
+        "attention-decoder-rescoring-no-ngram",
+    )
+    if params.decoding_method in token_based_methods:
+        sp = spm.SentencePieceProcessor()
+        sp.load(params.bpe_model)
+        max_token_id = sp.get_piece_size() - 1
+        word_table = None
+    else:
+        lexicon = Lexicon(params.lang_dir)
+        max_token_id = max(lexicon.tokens)
+        word_table = lexicon.word_table
     num_classes = max_token_id + 1  # +1 for the blank
 
     params.vocab_size = num_classes
@@ -967,7 +986,7 @@ def main():
                 device=device,
             )
         bpe_model = spm.SentencePieceProcessor()
-        bpe_model.load(str(params.lang_dir / "bpe.model"))
+        bpe_model.load(params.bpe_model)
     else:
         H = None
         bpe_model = None
@@ -1189,7 +1208,7 @@ def main():
             HLG=HLG,
             H=H,
             bpe_model=bpe_model,
-            word_table=lexicon.word_table,
+            word_table=word_table,
             G=G,
             NNLM=NNLM,
             LODR_lm=LODR_lm,
