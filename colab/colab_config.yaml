@@ -1,0 +1,23 @@
+# Shared config for the Colab fine-tuning workflow.
+# Loaded by BOTH notebooks:
+#   - data_process_colab.ipynb   (CPU: select -> materialize -> fbank -> MUSAN -> push)
+#   - train_zipformer_colab.ipynb (GPU: restore -> fine-tune -> before/after WER)
+# Edit here once; both notebooks pick the change up via their "load config" cell.
+
+repo: "."                              # where THIS repo lives (clone or upload)
+drive: "vibank_cs/"                    # persistent workspace dir (created if absent)
+prefix: "vibank_cs"                    # manifest/cuts filename prefix
+
+bpe_model: "model/bpe.model"           # <- upload YOUR bpe.model here
+pretrained: "model/epoch-35-avg-6.pt"  # <- upload YOUR base checkpoint here
+text_norm: "none"                      # MUST match how your BPE was trained
+
+# Hugging Face Hub persistence (survives Colab restarts; repos created PRIVATE).
+# Leave empty to use local paths only and skip the Hub entirely.
+hf_data_repo: ""                       # e.g. 'you/vibank-cs-data'  -> combined_dataset + fbank (incl. MUSAN)
+hf_model_repo: ""                      # e.g. 'you/vibank-cs-model' -> bpe.model, base + epoch-N.pt
+
+# Force recompute (data_process notebook only): when true, skip ALL HF pulls,
+# recompute fbank + MUSAN locally from scratch, then push the fresh artifacts.
+# Use this to regenerate data without inheriting stale state from the Hub.
+force_recompute: false
