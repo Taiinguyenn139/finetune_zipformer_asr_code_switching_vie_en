@@ -141,6 +141,7 @@ def load_sources(args: argparse.Namespace) -> List[Dict]:
 def build_filter(args: argparse.Namespace):
     from codeswitch_filter import CodeSwitchFilter
     from codeswitch_filter_v2 import CodeSwitchFilterV2
+    from codeswitch_filter_v3 import CodeSwitchFilterV3
 
     def _read(path: Optional[Path]) -> Optional[List[str]]:
         if path is None:
@@ -161,7 +162,8 @@ def build_filter(args: argparse.Namespace):
     # )
     # v2 is the statistical (fast-langdetect) filter; it thresholds on language
     # probabilities, not token counts/ratios, so the v1 token knobs don't apply.
-    return CodeSwitchFilterV2()
+    # return CodeSwitchFilterV2()
+    return CodeSwitchFilterV3()
 
 
 def stream_text_only(source: Dict, trust_remote_code: bool):
