@@ -57,6 +57,7 @@ class CodeSwitchFilterV3:
 
     def is_codeswitch(self, text: str) -> bool:
         tags = pos_tag(text)
+        print(f"Tags: {tags}")
         english_words = [word for word, tag in tags if tag == 'Fw']
         if len(english_words) < self.min_en_tokens:
             return False
