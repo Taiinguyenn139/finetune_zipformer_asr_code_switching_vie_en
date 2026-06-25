@@ -21,7 +21,7 @@ class CodeSwitchFilterV2:
 
     def __init__(
         self,
-        min_en_prob: float = 0.15,
+        min_en_prob: float = 0.05,
         max_en_prob: float = 0.75,
         min_vi_prob: float = 0.10,
     ) -> None:
