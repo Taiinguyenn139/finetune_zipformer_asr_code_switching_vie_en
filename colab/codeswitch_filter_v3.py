@@ -54,6 +54,23 @@ class CodeSwitchFilterV3:
         self.min_en_tokens = min_en_tokens
         self.max_en_tokens = max_en_tokens
 
+    def english_tokens(self, text: str):
+        """Compatibility helper for manifest/reporting code.
+
+        V2 is sentence-level and does not natively attribute English tokens.
+        For downstream scripts that still expect a token list, fall back to the
+        rule-based extractor when it is available. If the optional wordlist
+        dependency is missing, return an empty list instead of failing.
+        """
+        try:
+            from codeswitch_filter import english_tokens as _english_tokens
+        except ImportError:
+            return []
+
+        try:
+            return _english_tokens(text)
+        except ImportError:
+            return []
 
     def is_codeswitch(self, text: str) -> bool:
         # tags = pos_tag(text)
