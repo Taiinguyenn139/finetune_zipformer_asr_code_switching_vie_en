@@ -47,6 +47,7 @@ class CodeSwitchFilterV2:
         
         # Parse into a flat dictionary mapping lang -> score
         scores: Dict[str, float] = {p['lang']: p['score'] for p in predictions}
+        print(f"Debug: Text: '{text}' -> Scores: {scores}")
         
         en_score = scores.get('en', 0.0)
         vi_score = scores.get('vi', 0.0)
