@@ -48,20 +48,20 @@ class CodeSwitchFilterV3:
 
     def __init__(
         self,
-        min_en_tokens: int = 1,
-        max_en_tokens: int = 3,
+        min_en_tokens: int = 0,
+        max_en_tokens: int = 0,
     ) -> None:
         self.min_en_tokens = min_en_tokens
         self.max_en_tokens = max_en_tokens
 
 
     def is_codeswitch(self, text: str) -> bool:
-        tags = pos_tag(text)
-        print(f"Tags: {tags}")
-        english_words = [word for word, tag in tags if tag == 'Fw']
-        if len(english_words) < self.min_en_tokens:
-            return False
-        if self.max_en_tokens is not None:
-            if len(english_words) > self.max_en_tokens:
-                return False
+        # tags = pos_tag(text)
+        # print(f"Tags: {tags}")
+        # english_words = [word for word, tag in tags if tag == 'Fw']
+        # if len(english_words) < self.min_en_tokens:
+        #     return False
+        # if self.max_en_tokens is not None:
+        #     if len(english_words) > self.max_en_tokens:
+        #         return False
         return True
